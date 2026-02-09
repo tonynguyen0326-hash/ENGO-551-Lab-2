@@ -11,12 +11,14 @@
             Password: <input type="password" name="password" placeholder="Enter a password." required><br><br>
             Confirm Password: <input type="password" name="confirm" placeholder="Confirm your password." required> <br><br>
             <!-- Button to register account-->
-            <input type="submit" value="Register">
+            <input type="submit" value="Register"><br><br>
             <!-- if passwords do not match-->
             {% if error %}
-                <p style="color:red;">{{ error }}</p>
+                <p style="color:red;">{{ error }}</p><br><br>
             {% endif %}
-        
         </form>
+        <!-- Button to go to login page -->
+         <a href="/login">Already have an account?</a><br><br>
+         <a href="/">Home</a>
     </body>
 </html>
