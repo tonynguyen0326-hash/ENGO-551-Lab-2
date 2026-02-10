@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    {{ book.title }}
+{% endblock %}
+
+{% block heading %}
+    {{ book.title }}
+{% endblock %}
+
+{% block body %}
+    <ul>
+        <li>ISBN: {{ book.isbn }}</li>
+        <li>Author: {{ book.author }}</li>
+        <li>Publication Year: {{ book.year }}</li>
+    </ul>
+
+    <a href="{{ url_for('search') }}">Back to Search Page.</a>
+{% endblock %}

@@ -21,4 +21,20 @@
             <p>{{ error }}</p>
         {% endif %}                       
     </form>
+
+    {% if books is not none %}
+        {% if books %}
+            <ul>
+                {% for book in books %}
+                    <li>
+                        <a href="{{url_for('book', isbn=book.isbn) }}">
+                            {{ book.title }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No results found.</p>
+        {% endif %}
+    {% endif %}    
 {% endblock %}

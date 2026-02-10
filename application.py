@@ -60,7 +60,20 @@ def register():
 
         db.commit()
 
-        return render_template("search.html")
+        # log in new user
+        user = db.execute(
+            text("SELECT * FROM users WHERE username = :username"),
+            {"username": username}
+        ).fetchone()
+
+        # if registration fails
+        if user is None:
+            return render_template("register.html", error="Registration failed. Please try again.")
+
+        session["user_id"] = user.id
+        session["username"] = user.username
+
+        return redirect(url_for("search"))
     else:
         return render_template("register.html")
     
@@ -104,20 +117,41 @@ def logout():
     return render_template("logout.html")
 
 # search page for books
-@app.route("/search", methods=["POST"])
+@app.route("/search", methods=["GET", "POST"])
 def search():
      # if user is not logged in, redirect to home page
     if "user_id" not in session:
         return redirect(url_for("index"))
-    # get info from book table
-    isbn = request.form.get("isbn")
-    title = request.form.get("title")
-    author = request.form.get("author")
-    year = request.form.get("year")
+    
+    # initialize books variable
+    books = None
 
-    # query search results
-    query = text("SELECT * FROM books WHERE (:isbn IS NULL OR isbn ILIKE '%' || :isbn || '%') AND (:title IS NULL OR title ILIKE '%' || :title || '%') AND (:author IS NULL OR author ILIKE '%' || :author || '%') AND (:year IS NULL OR year ILIKE '%' || :year || '%')")
+    if request.method == "POST":
+        # get info from book table
+        isbn = request.form.get("isbn")
+        title = request.form.get("title")
+        author = request.form.get("author")
+        year = request.form.get("year")
 
-    books = db.execute(query, {"isbn": isbn or None, "title": title or None, "author": author or None, "year": year or None}).fetchall()
+        # query search results
+        query = text(
+            "SELECT * FROM books WHERE (:isbn IS NULL OR isbn ILIKE '%' || :isbn || '%') AND (:title IS NULL OR title ILIKE '%' || :title || '%') AND (:author IS NULL OR author ILIKE '%' || :author || '%') AND (:year IS NULL OR year = :year)")
+
+        books = db.execute(
+            query, {"isbn": isbn or None, "title": title or None, "author": author or None, "year": year or None}).fetchall()
 
     return render_template("search.html", books=books)
+
+# page for each book
+@app.route("/books/<string:isbn>")
+def book(isbn):
+     # if user is not logged in, redirect to home page
+    if "user_id" not in session:
+        return redirect(url_for("index"))
+    
+    # make sure book exists
+    book = db.execute(text("SELECT * FROM books WHERE isbn = :isbn"), {"isbn": isbn}).fetchone()
+    if book is None:
+        return render_template("error.html", error="No results found.") 
+
+    return render_template("book.html", book=book)
