@@ -1,12 +1,13 @@
-# Project 1
+# Project 2
 
 ENGO 551
 
-This project has the basic build for a book review website, currently having a home page, registration page, login page, logout page, a page for searching for a book with its IBSN, author, title, or year, a page for each book giving information about the book, and an error page for if the book page does not exist.
+Continuing from Project 1, the book review website can now receive one review per person per book. The book page now also includes the reviews left by the user, the average rating, and number of ratings the book received from Google Books API, as well as a summarized description from Google Gemini API. Lastly, an API Access page is created for each book as well with the above descriptors as well as ISBN.
 
 create.sql: creation of tables in SQL
 import.py: how the books were imported from the books.csv file using SQL
 application.py: @app.route functions for how the different urls work
+test_gemini.py: page for testing gemini API key
 
 within templates:
 layout.html: basic layout for each .html page
