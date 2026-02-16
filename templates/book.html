@@ -15,6 +15,39 @@
         <li>Publication Year: {{ book.year }}</li>
     </ul>
 
+    <!-- for errors-->
+    {% if error %}
+        <p>
+        <strong>{{ error }}</strong>
+        </p>
+    {% endif %}
+
+    <!-- reviews -->
+    <h2>Submit Your Review!</h2> 
+    <form action="{{ url_for('book', isbn=book.isbn) }}" method="POST">
+        <label for="rating">Book Rating (1-5)</label><br><br>
+        <input type="number" name="rating" id="rating" min="1" max="5" required><br><br>
+        <label for="review">Review</label><br><br>
+        <textarea name="review" id="review" required></textarea><br><br>
+        <input type="submit" value="Submit Review!"><br><br>
+    </form>
+
+    <h2>Reviews</h2>
+    {% if reviews %}
+        <ul>
+            {% for review in reviews %}
+                <li>
+                    {{ review.username }} rated {{ review.rating }}/5 <br><br>
+                    {{ review.review }} <br><br>
+                    {{ review.time_of }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No review yet. Be the first to review this book!</p>
+    {% endif %}
+    <br>
+
     <a href="{{ url_for('search') }}">Back to Search Page.</a><br><br>
     <a href="{{ url_for('logout') }}">Log Out</a>
 {% endblock %}

@@ -143,15 +143,51 @@ def search():
     return render_template("search.html", books=books)
 
 # page for each book
-@app.route("/books/<string:isbn>")
+@app.route("/books/<string:isbn>", methods=["GET", "POST"])
 def book(isbn):
-     # if user is not logged in, redirect to home page
+    
+    # if user is not logged in, redirect to home page
     if "user_id" not in session:
         return redirect(url_for("index"))
     
     # make sure book exists
-    book = db.execute(text("SELECT * FROM books WHERE isbn = :isbn"), {"isbn": isbn}).fetchone()
+    book = db.execute(
+        text("SELECT * FROM books WHERE isbn = :isbn"), {"isbn": isbn}
+        ).fetchone()
+    
+    error = None
+    
     if book is None:
         return render_template("error.html", error="No results found.") 
+    
+    if request.method == "POST":
 
-    return render_template("book.html", book=book)
+        # get rating and review
+        rating = request.form.get("rating")
+        review = request.form.get("review")
+
+        # make sure rating and review are not empty
+        if not rating or not review:
+            error="All fields required for review."
+
+        # make sure user has not reviewed book already
+        exist = db.execute(
+            text("SELECT * FROM reviews WHERE user_id = :user_id AND isbn = :isbn"), {"user_id": session["user_id"], "isbn": isbn}
+        ).fetchone()
+
+        if exist:
+            return render_template("book.html", book=book, error="Only one review per book.")    
+
+        # insert new review
+        db.execute(text("INSERT INTO reviews (user_id, isbn, rating, review) VALUES (:user_id, :isbn, :rating, :review)"),
+                   {"user_id": session["user_id"], "isbn": isbn, "rating": int(rating), "review": review}
+        )
+
+        db.commit()
+
+        # get reviews
+    reviews = db.execute(
+        text("SELECT review.rating, review.review, review.time_of, u.username FROM reviews review JOIN users u ON review.user_id = u.id WHERE review.isbn = :isbn ORDER BY review.time_of DESC"), {"isbn": isbn}
+    ).fetchall()
+
+    return render_template("book.html", book=book, reviews=reviews, error=error)
