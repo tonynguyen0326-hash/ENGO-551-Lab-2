@@ -10,3 +10,13 @@ CREATE TABLE IF NOT EXISTS books (
     author VARCHAR NOT NULL,
     year INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    isbn VARCHAR NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    review TEXT NOT NULL,
+    time_of TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, isbn)
+);
