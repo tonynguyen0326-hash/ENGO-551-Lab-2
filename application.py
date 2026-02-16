@@ -1,7 +1,7 @@
 import os
 import requests
 
-from flask import Flask, session, redirect, request, render_template, url_for
+from flask import Flask, session, redirect, request, render_template, url_for, jsonify, abort
 from flask_session import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -209,7 +209,7 @@ def google_books(isbn):
     
     # check status code
     if res.status_code != 200:
-        return None
+        raise Exception("API request unsuccessful.")
     
     # turn JSON to python
     data = res.json()
@@ -263,3 +263,33 @@ def summarize(description):
     )
     
     return response.text
+
+@app.route("/api/<string:isbn>", methods=["GET"])
+def api(isbn):
+
+    # make sure book exists
+    book = db.execute(
+        text("SELECT * FROM books WHERE isbn = :isbn"), {"isbn": isbn}
+        ).fetchone()   
+    
+    # return 404 error if book not found
+    if book is None:
+        return abort(404, description="Book not in database. Please try again.")
+    
+    # get Google Books info
+    google = google_books(isbn)
+
+    # JSON response
+    data = {
+        "title": book.title,
+        "author": book.author,
+        "publishedDate": google.get("publishedDate"),
+        "ISBN_10": google.get("ISBN_10"),
+        "ISBN_13": google.get("ISBN_13"),
+        "reviewCount": google.get("ratingsCount"),
+        "averageRating": google.get("averageRating"),
+        "description": google.get("description"),
+        "summarizedDescription": summarize(google.get("description"))
+    }
+    
+    return jsonify(data)
