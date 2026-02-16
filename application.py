@@ -1,10 +1,12 @@
 import os
+import requests
 
 from flask import Flask, session, redirect, request, render_template, url_for
 from flask_session import Session
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
+from google import genai
 
 app = Flask(__name__)
 
@@ -154,11 +156,18 @@ def book(isbn):
     book = db.execute(
         text("SELECT * FROM books WHERE isbn = :isbn"), {"isbn": isbn}
         ).fetchone()
-    
+
+        # initalize error
     error = None
     
     if book is None:
         return render_template("error.html", error="No results found.") 
+    
+    # get info from Google Books 
+    google = google_books(isbn)
+    summary = summarize(google.get("description"))
+    avg = google.get("averageRating")
+    count = google.get("ratingsCount")
     
     if request.method == "POST":
 
@@ -190,4 +199,67 @@ def book(isbn):
         text("SELECT review.rating, review.review, review.time_of, u.username FROM reviews review JOIN users u ON review.user_id = u.id WHERE review.isbn = :isbn ORDER BY review.time_of DESC"), {"isbn": isbn}
     ).fetchall()
 
-    return render_template("book.html", book=book, reviews=reviews, error=error)
+    return render_template("book.html", book=book, reviews=reviews, error=error, google=google, summary=summary, avg=avg, count=count)
+
+# for Google Books data
+def google_books(isbn):
+    
+    # get response
+    res = requests.get("https://www.googleapis.com/books/v1/volumes", params={"q": f"isbn:{isbn}"})
+    
+    # check status code
+    if res.status_code != 200:
+        return None
+    
+    # turn JSON to python
+    data = res.json()
+
+    # if nothing found in Google Books
+    if "items" not in data:
+        return None
+    
+    # access data
+    volumeInfo = data["items"][0]["volumeInfo"]
+    averageRating = volumeInfo.get("averageRating")
+    ratingsCount = volumeInfo.get("ratingsCount")
+    description = volumeInfo.get("description")
+    publishedDate = volumeInfo.get("publishedDate")
+    
+    # initialize both ISBN types
+    isbn10 = None
+    isbn13 = None
+
+    # find identifiers
+    industryIdentifiers = volumeInfo.get("industryIdentifiers")
+
+    if industryIdentifiers:
+        for id in industryIdentifiers:
+            if id.get("type") == "ISBN_10":
+                isbn10 = id.get("identifier")
+            elif id.get("type") == "ISBN_13":
+                isbn13 = id.get("identifier")
+
+    return {
+        "averageRating": averageRating,
+        "ratingsCount": ratingsCount,
+        "description": description,
+        "publishedDate": publishedDate,
+        "ISBN_10": isbn10,
+        "ISBN_13": isbn13
+    }
+
+# API Key and AI client
+API_KEY = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=API_KEY)
+
+def summarize(description):
+    
+    # make sure description exists
+    if not description:
+        return None
+    
+    response = client.models.generate_content(
+        model="gemini-2.0-flash", contents=f"Summarize this text using less than 50 words: {description}"
+    )
+    
+    return response.text

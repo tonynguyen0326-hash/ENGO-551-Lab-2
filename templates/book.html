@@ -22,6 +22,18 @@
         </p>
     {% endif %}
 
+    <!-- summary -->
+    <h2>Book Summary</h2>
+    <p>{{ summary }}</p>
+    
+    <!-- average rating -->
+    <h2>Average Rating (/5)</h2>
+    <p>{{ avg }}</p>
+
+    <!-- ratings count -->
+     <h2>Number of Ratings</h2>
+     <p>{{ count }}</p>
+
     <!-- reviews -->
     <h2>Submit Your Review!</h2> 
     <form action="{{ url_for('book', isbn=book.isbn) }}" method="POST">
@@ -32,7 +44,7 @@
         <input type="submit" value="Submit Review!"><br><br>
     </form>
 
-    <h2>Reviews</h2>
+    <h2>Your Reviews</h2>
     {% if reviews %}
         <ul>
             {% for review in reviews %}
@@ -47,6 +59,7 @@
         <p>No review yet. Be the first to review this book!</p>
     {% endif %}
     <br>
+
 
     <a href="{{ url_for('search') }}">Back to Search Page.</a><br><br>
     <a href="{{ url_for('logout') }}">Log Out</a>
