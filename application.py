@@ -165,9 +165,14 @@ def book(isbn):
     
     # get info from Google Books 
     google = google_books(isbn)
-    summary = summarize(google.get("description"))
-    avg = google.get("averageRating")
-    count = google.get("ratingsCount")
+    
+    if google and google.get("description"):
+        summary = summarize(google.get("description"))
+        avg = google.get("averageRating")
+        count = google.get("ratingsCount")
+    else:
+        summary = "No summary available."
+
     
     if request.method == "POST":
 
@@ -209,7 +214,7 @@ def google_books(isbn):
     
     # check status code
     if res.status_code != 200:
-        raise Exception("API request unsuccessful.")
+        return
     
     # turn JSON to python
     data = res.json()
